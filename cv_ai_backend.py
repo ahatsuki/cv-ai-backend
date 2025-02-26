@@ -5,7 +5,7 @@ import os
 
 app = FastAPI()
 
-# Haal de API-sleutel op uit de omgevingsvariabelen
+# OpenAI API-key ophalen uit omgevingsvariabelen
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 class CVRequest(BaseModel):
@@ -14,18 +14,11 @@ class CVRequest(BaseModel):
 @app.post("/evaluate-cv")
 async def evaluate_cv(request: CVRequest):
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "Je bent een HR-expert die CV's beoordeelt en tips geeft."},
-                {"role": "user", "content": f"Beoordeel dit CV en geef een score van 1-100 met verbeterpunten:\n{request.cv_text}"}
-            ]
+        response = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": f"Schrijf een feedback over dit CV: {request.cv_text}"}]
         )
-        
-        feedback = response["choices"][0]["message"]["content"]
-        score = int([int(s) for s in feedback.split() if s.isdigit()][0])  # Extracteer score uit tekst
-        
-        return {"score": score, "feedback": feedback}
-    
+        feedback = response.choices[0].message.content
+        return {"message": "Evaluatie voltooid", "feedback": feedback}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
